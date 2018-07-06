@@ -18,6 +18,7 @@ import android.support.v4.content.FileProvider;
 import android.util.Base64;
 import android.webkit.MimeTypeMap;
 import android.content.ContentResolver;
+import android.media.ExifInterface;
 
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Callback;
@@ -46,6 +47,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 class PickerModule extends ReactContextBaseJavaModule implements ActivityEventListener {
 
@@ -533,6 +536,63 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
         }
 
         return options;
+    }
+
+    @ReactMethod
+    public void getDateTimeAndGPS(String uriString, Promise promise) {
+        try {     
+            Activity activity = getCurrentActivity();
+            Uri uri = Uri.parse(uriString);
+            String path = resolveRealPath(activity, uri, false);
+            WritableMap exif = ExifExtractor.extract(path);
+            String dateTimeOriginal = new String();
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N) {
+                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
+            }else{
+                //apiLevel24未満の時は更新日時を使用します
+                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME);
+            }
+            String latitude = exif.getString(ExifInterface.TAG_GPS_LATITUDE);
+            String latitudeRef = exif.getString(ExifInterface.TAG_GPS_LATITUDE_REF);
+            String longitude = exif.getString(ExifInterface.TAG_GPS_LONGITUDE);
+            String longitudeRef = exif.getString(ExifInterface.TAG_GPS_LONGITUDE_REF);
+
+            WritableMap result = new WritableNativeMap();
+            if(dateTimeOriginal != null){
+                
+            //http://www.exif.org/Exif2-2.PDF p30
+            SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+            Date date = dateFormater.parse(dateTimeOriginal);
+            //unix time(ミリ秒)に変換します
+            Number unixDateTimeOriginal = date.getTime();
+            result.putDouble(ExifInterface.TAG_DATETIME_ORIGINAL,unixDateTimeOriginal.doubleValue());
+        }
+
+            result.putString(ExifInterface.TAG_GPS_LATITUDE, latitude);
+            result.putString(ExifInterface.TAG_GPS_LATITUDE_REF,latitudeRef);
+            result.putString(ExifInterface.TAG_GPS_LONGITUDE,longitude);
+            result.putString(ExifInterface.TAG_GPS_LONGITUDE_REF,longitudeRef);
+
+            promise.resolve(result);
+        } catch (Exception ex) {
+            promise.reject(ex);
+        }
+    }
+        @ReactMethod
+    public void getCompressedImageBase64(ReadableMap options ,Promise promise) {
+        try {
+            WritableMap image = new WritableNativeMap();
+            Activity activity = getCurrentActivity();
+            Uri uri = Uri.parse(options.getString("path"));
+            String path = resolveRealPath(activity, uri, false);
+            File compressedImage = compression.compressImage(activity, options, path);
+            String compressedImagePath = compressedImage.getPath();
+            image.putString("path", "file://" + compressedImagePath);
+            image.putString("data", getBase64StringFromFile(compressedImagePath));
+            promise.resolve(image);
+        } catch(Exception ex){
+           promise.reject(ex);
+        }
     }
 
     private WritableMap getImage(final Activity activity, String path) throws Exception {
