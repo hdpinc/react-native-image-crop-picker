@@ -545,28 +545,25 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             Uri uri = Uri.parse(uriString);
             String path = resolveRealPath(activity, uri, false);
             WritableMap exif = ExifExtractor.extract(path);
-            String dateTimeOriginal = new String();
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.N) {
-                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
-            }else{
-                //apiLevel24未満の時は更新日時を使用します
-                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME);
-            }
+            String dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
             String latitude = exif.getString(ExifInterface.TAG_GPS_LATITUDE);
             String latitudeRef = exif.getString(ExifInterface.TAG_GPS_LATITUDE_REF);
             String longitude = exif.getString(ExifInterface.TAG_GPS_LONGITUDE);
             String longitudeRef = exif.getString(ExifInterface.TAG_GPS_LONGITUDE_REF);
 
             WritableMap result = new WritableNativeMap();
-            if(dateTimeOriginal != null){
-                
+            if(dateTimeOriginal == null){
+                //TAG_DATETIME_ORIGINALが取得できなかった場合更新日時を取得します
+                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME);
+            }
+
             //http://www.exif.org/Exif2-2.PDF p30
             SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
             Date date = dateFormater.parse(dateTimeOriginal);
             //unix time(ミリ秒)に変換します
             Number unixDateTimeOriginal = date.getTime();
             result.putDouble(ExifInterface.TAG_DATETIME_ORIGINAL,unixDateTimeOriginal.doubleValue());
-        }
+
 
             result.putString(ExifInterface.TAG_GPS_LATITUDE, latitude);
             result.putString(ExifInterface.TAG_GPS_LATITUDE_REF,latitudeRef);
@@ -578,8 +575,8 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             promise.reject(ex);
         }
     }
-        @ReactMethod
-    public void getCompressedImageBase64(ReadableMap options ,Promise promise) {
+    @ReactMethod
+    private void _getCompressedImageBase64(ReadableMap options ,Promise promise) {
         try {
             WritableMap image = new WritableNativeMap();
             Activity activity = getCurrentActivity();
@@ -591,7 +588,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             image.putString("data", getBase64StringFromFile(compressedImagePath));
             promise.resolve(image);
         } catch(Exception ex){
-           promise.reject(ex);
+            promise.reject(ex);
         }
     }
 
