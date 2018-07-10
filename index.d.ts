@@ -25,6 +25,14 @@ declare module "react-native-image-crop-picker" {
         enableRotationGesture?: boolean;
     }
 
+    export interface  GetDateTimeAndGPSResponse {
+        DateTimeOriginal?: number,
+        GPSLatitude?: string,
+        GPSLatitudeRef?: 'N' | 'S',
+        GPSLongitude?: string,
+        GPSLongitudeRef?: 'E' | 'W'
+        };
+
     export interface Image {
         path: string;
         size: number;
@@ -48,6 +56,7 @@ declare module "react-native-image-crop-picker" {
     export function openCropper(options: Options): Promise<Image>;
     export function clean(): Promise<void>;
     export function cleanSingle(path: string): Promise<void>;
+    export function getDateTimeAndGPS(path: string): Promise<GetDateTimeAndGPSResponse>;
 
     export interface ImageCropPicker {
         openPicker(options: Options): Promise<Image | Image[]>;
@@ -55,6 +64,7 @@ declare module "react-native-image-crop-picker" {
         openCropper(options: Options): Promise<Image>;
         clean(): Promise<void>;
         cleanSingle(path: string): Promise<void>;
+        getDateTimeAndGPS(path: string):Promise<GetDateTimeAndGPSResponse>;
     }
 
     const ImageCropPicker: ImageCropPicker;
