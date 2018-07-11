@@ -34,6 +34,8 @@
 #define ERROR_CANNOT_PROCESS_VIDEO_KEY @"E_CANNOT_PROCESS_VIDEO"
 #define ERROR_CANNOT_PROCESS_VIDEO_MSG @"Cannot process video data"
 
+#define ERROR__NOT_FOUND_DATE_TIME @"Cannot find date time original"
+
 @implementation ImageResult
 @end
 
@@ -229,6 +231,60 @@ RCT_EXPORT_METHOD(openCamera:(NSDictionary *)options
 
     return YES;
 }
+
+RCT_EXPORT_METHOD(getDateTimeAndGPS:(NSString *)path
+                resolver:(RCTPromiseResolveBlock)resolve
+                rejecter:(RCTPromiseRejectBlock)reject) {
+
+    [self.bridge.imageLoader loadImageWithURLRequest:[RCTConvert NSURLRequest:path] callback:^(NSError *error, UIImage *image) {
+        if (error) {
+            reject(ERROR_CROPPER_IMAGE_NOT_FOUND_KEY, ERROR_CROPPER_IMAGE_NOT_FOUND_MSG, nil);
+        } else {
+
+            @try{
+                NSDictionary *metaData = [self getMetaData:path];
+                NSDictionary *exif = [metaData objectForKey:(__bridge NSString * ) kCGImagePropertyExifDictionary];
+                NSDictionary *gps = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyGPSDictionary];
+                NSString *dateTimeOriginal = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeOriginal];
+                NSNumber *latitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitude];
+                NSString *latitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitudeRef];
+                NSNumber *longitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitude];
+                NSString *longitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitudeRef];
+                NSMutableDictionary *result = [NSMutableDictionary dictionary];
+
+                if(dateTimeOriginal){
+                    NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
+
+                    // http://www.exif.org/Exif2-2.PDF p:30 
+                    [formatter setDateFormat:@"yyyy:MM:dd HH:mm:ss"];
+                    NSDate *date = [formatter dateFromString:dateTimeOriginal];
+                    　　　　　　　　
+                    //Objective-cではUnixTimeの秒数以下を小数点以下であらわすため1000倍します
+                    NSNumber *unixDateTimeOriginal = [NSNumber numberWithDouble:[date timeIntervalSince1970]* 1000];
+                    [result setValue:unixDateTimeOriginal forKey:(__bridge NSString *) kCGImagePropertyExifDateTimeOriginal];
+                }   
+                //http://www.exif.org/Exif2-2.PDF p:46 Exifの仕様に合わせて変換します
+                [result setValue:[latitude stringValue]  forKey:@"GPSLatitude"];
+                [result setValue:latitudeRef forKey:@"GPSLatitudeRef"];
+                [result setValue:[longitude stringValue]  forKey:@"GPSLongitude"];
+                [result setValue:longitudeRef  forKey:@"GPSLongitudeRef"];
+                resolve(result);
+            }
+            @catch(NSException *ex){
+                reject(ex.name,ex.reason,nil);
+            }
+        }
+    }];
+}
+
+
+-(NSDictionary *)getMetaData:(NSString *)path{
+    NSURL *url = [NSURL URLWithString:path];
+    CIImage *image = [CIImage imageWithContentsOfURL:url];
+    NSDictionary<NSString *,id> *myMetadata = image.properties;
+    return myMetadata;
+}
+
 
 RCT_EXPORT_METHOD(cleanSingle:(NSString *) path
                   resolver:(RCTPromiseResolveBlock)resolve
