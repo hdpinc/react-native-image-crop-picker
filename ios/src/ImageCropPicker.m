@@ -263,13 +263,12 @@ RCT_EXPORT_METHOD(getDateTimeAndGPS:(NSString *)path
                     NSNumber *unixDateTimeOriginal = [NSNumber numberWithDouble:[date timeIntervalSince1970]* 1000];
                     [result setValue:unixDateTimeOriginal forKey:(__bridge NSString *) kCGImagePropertyExifDateTimeOriginal];
                 }   
-                    //http://www.exif.org/Exif2-2.PDF p:46 Exifの仕様に合わせて変換します
-                    [result setValue:[latitude stringValue]  forKey:@"GPSLatitude"];
-                    [result setValue:latitudeRef forKey:@"GPSLatitudeRef"];
-                    [result setValue:[longitude stringValue]  forKey:@"GPSLongitude"];
-                    [result setValue:longitudeRef  forKey:@"GPSLongitudeRef"];
-
-                    resolve(result);
+                //http://www.exif.org/Exif2-2.PDF p:46 Exifの仕様に合わせて変換します
+                [result setValue:[latitude stringValue]  forKey:@"GPSLatitude"];
+                [result setValue:latitudeRef forKey:@"GPSLatitudeRef"];
+                [result setValue:[longitude stringValue]  forKey:@"GPSLongitude"];
+                [result setValue:longitudeRef  forKey:@"GPSLongitudeRef"];
+                resolve(result);
             }
             @catch(NSException *ex){
                 reject(ex.name,ex.reason,nil);

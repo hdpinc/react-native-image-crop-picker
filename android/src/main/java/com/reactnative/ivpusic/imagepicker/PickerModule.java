@@ -575,8 +575,8 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             promise.reject(ex);
         }
     }
-    @ReactMethod
-    private void _getCompressedImageBase64(ReadableMap options ,Promise promise) {
+
+    private void getCompressedImageBase64(ReadableMap options ,Promise promise) {
         try {
             WritableMap image = new WritableNativeMap();
             Activity activity = getCurrentActivity();
