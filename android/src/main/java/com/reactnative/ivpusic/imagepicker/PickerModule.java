@@ -545,17 +545,21 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             Uri uri = Uri.parse(uriString);
             String path = resolveRealPath(activity, uri, false);
             WritableMap exif = ExifExtractor.extract(path);
-            String dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
+            String dateTimeOriginal;
+            boolean hasDateTimeOriginal = exif.hasKey(ExifInterface.TAG_DATETIME_ORIGINAL);
+            if(hasDateTimeOriginal){
+                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
+            }else{
+                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME);
+            }
+
+
             String latitude = exif.getString(ExifInterface.TAG_GPS_LATITUDE);
             String latitudeRef = exif.getString(ExifInterface.TAG_GPS_LATITUDE_REF);
             String longitude = exif.getString(ExifInterface.TAG_GPS_LONGITUDE);
             String longitudeRef = exif.getString(ExifInterface.TAG_GPS_LONGITUDE_REF);
 
             WritableMap result = new WritableNativeMap();
-            if(dateTimeOriginal == null){
-                //TAG_DATETIME_ORIGINALが取得できなかった場合更新日時を取得します
-                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME);
-            }
 
             //http://www.exif.org/Exif2-2.PDF p30
             SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
