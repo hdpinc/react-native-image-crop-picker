@@ -245,15 +245,16 @@ RCT_EXPORT_METHOD(getDateTimeAndGPS:(NSString *)path
                 NSDictionary *metaData = [self getMetaData:path];
                 NSDictionary *exif = [metaData objectForKey:(__bridge NSString * ) kCGImagePropertyExifDictionary];
                 NSDictionary *gps = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyGPSDictionary];
+                NSDictionary *tiff = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyTIFFDictionary];
                 NSString *dateTime = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeOriginal];
                 NSNumber *latitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitude];
                 NSString *latitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitudeRef];
                 NSNumber *longitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitude];
                 NSString *longitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitudeRef];
                 NSMutableDictionary *result = [NSMutableDictionary dictionary];
-                //DateTimeOriginalが存在しない時デジタル化された時刻をつかいます。
+                //DateTimeOriginalが存在しない時編集された時刻をつかいます。
                 if(dateTime == nil){
-                    dateTime = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeDigitized];
+                    dateTime = [tiff objectForKey:(__bridge NSString *)kCGImagePropertyTIFFDateTime];
                 }
 
                 if(dateTime){

@@ -545,15 +545,16 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             Uri uri = Uri.parse(uriString);
             String path = resolveRealPath(activity, uri, false);
             WritableMap exif = ExifExtractor.extract(path);
-            String dateTime;
+            String dateTime = null;
+
             boolean hasDateTimeOriginal = exif.hasKey(ExifInterface.TAG_DATETIME_ORIGINAL);
             //exif情報からDateTimeOriginalが取得できない時、更新日時を取得します
             if(hasDateTimeOriginal){
                 dateTime =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
-            }else{
+            }
+            if(dateTime==null){
                 dateTime =  exif.getString(ExifInterface.TAG_DATETIME);
             }
-
 
             String latitude = exif.getString(ExifInterface.TAG_GPS_LATITUDE);
             String latitudeRef = exif.getString(ExifInterface.TAG_GPS_LATITUDE_REF);
@@ -562,12 +563,14 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
 
             WritableMap result = new WritableNativeMap();
 
-            //http://www.exif.org/Exif2-2.PDF p30
-            SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-            Date date = dateFormater.parse(dateTime);
-            //unix time(ミリ秒)に変換します
-            Number unixDateTimeOriginal = date.getTime();
-            result.putDouble(ExifInterface.TAG_DATETIME_ORIGINAL,unixDateTimeOriginal.doubleValue());
+            if(dateTime!=null){
+                //http://www.exif.org/Exif2-2.PDF p30
+                SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
+                Date date = dateFormater.parse(dateTime);
+                //unix time(ミリ秒)に変換します
+                Number unixDateTimeOriginal = date.getTime();
+                result.putDouble(ExifInterface.TAG_DATETIME_ORIGINAL,unixDateTimeOriginal.doubleValue());
+        }
 
 
             result.putString(ExifInterface.TAG_GPS_LATITUDE, latitude);
