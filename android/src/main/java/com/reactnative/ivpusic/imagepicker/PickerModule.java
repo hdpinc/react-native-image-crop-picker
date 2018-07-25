@@ -570,7 +570,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
                 //unix time(ミリ秒)に変換します
                 Number unixDateTimeOriginal = date.getTime();
                 result.putDouble(ExifInterface.TAG_DATETIME_ORIGINAL,unixDateTimeOriginal.doubleValue());
-        }
+            }
 
 
             result.putString(ExifInterface.TAG_GPS_LATITUDE, latitude);
