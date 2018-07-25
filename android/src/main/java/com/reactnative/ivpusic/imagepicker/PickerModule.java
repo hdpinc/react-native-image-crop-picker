@@ -545,12 +545,13 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
             Uri uri = Uri.parse(uriString);
             String path = resolveRealPath(activity, uri, false);
             WritableMap exif = ExifExtractor.extract(path);
-            String dateTimeOriginal;
+            String dateTime;
             boolean hasDateTimeOriginal = exif.hasKey(ExifInterface.TAG_DATETIME_ORIGINAL);
+            //exif情報からDateTimeOriginalが取得できない時、更新日時を取得します
             if(hasDateTimeOriginal){
-                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
+                dateTime =  exif.getString(ExifInterface.TAG_DATETIME_ORIGINAL);
             }else{
-                dateTimeOriginal =  exif.getString(ExifInterface.TAG_DATETIME);
+                dateTime =  exif.getString(ExifInterface.TAG_DATETIME);
             }
 
 
@@ -563,7 +564,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
 
             //http://www.exif.org/Exif2-2.PDF p30
             SimpleDateFormat dateFormater = new SimpleDateFormat("yyyy:MM:dd HH:mm:ss");
-            Date date = dateFormater.parse(dateTimeOriginal);
+            Date date = dateFormater.parse(dateTime);
             //unix time(ミリ秒)に変換します
             Number unixDateTimeOriginal = date.getTime();
             result.putDouble(ExifInterface.TAG_DATETIME_ORIGINAL,unixDateTimeOriginal.doubleValue());

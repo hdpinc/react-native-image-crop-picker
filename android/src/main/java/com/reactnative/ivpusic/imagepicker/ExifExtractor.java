@@ -63,6 +63,7 @@ class ExifExtractor {
     private static List<String> getLevel23Attributes() {
         return new ArrayList<>(Arrays.asList(
                 TAG_DATETIME_DIGITIZED,
+                TAG_DATETIME_ORIGINAL,
                 TAG_SUBSEC_TIME,
                 TAG_SUBSEC_TIME_DIG,
                 TAG_SUBSEC_TIME_ORIG

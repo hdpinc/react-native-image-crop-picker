@@ -245,23 +245,27 @@ RCT_EXPORT_METHOD(getDateTimeAndGPS:(NSString *)path
                 NSDictionary *metaData = [self getMetaData:path];
                 NSDictionary *exif = [metaData objectForKey:(__bridge NSString * ) kCGImagePropertyExifDictionary];
                 NSDictionary *gps = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyGPSDictionary];
-                NSString *dateTimeOriginal = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeOriginal];
+                NSString *dateTime = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeOriginal];
                 NSNumber *latitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitude];
                 NSString *latitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitudeRef];
                 NSNumber *longitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitude];
                 NSString *longitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitudeRef];
                 NSMutableDictionary *result = [NSMutableDictionary dictionary];
+                //DateTimeOriginalが存在しない時デジタル化された時刻をつかいます。
+                if(dateTime == nil){
+                    dateTime = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeDigitized];
+                }
 
-                if(dateTimeOriginal){
+                if(dateTime){
                     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
 
                     // http://www.exif.org/Exif2-2.PDF p:30 
                     [formatter setDateFormat:@"yyyy:MM:dd HH:mm:ss"];
-                    NSDate *date = [formatter dateFromString:dateTimeOriginal];
+                    NSDate *date = [formatter dateFromString:dateTime];
                     　　　　　　　　
                     //Objective-cではUnixTimeの秒数以下を小数点以下であらわすため1000倍します
-                    NSNumber *unixDateTimeOriginal = [NSNumber numberWithDouble:[date timeIntervalSince1970]* 1000];
-                    [result setValue:unixDateTimeOriginal forKey:(__bridge NSString *) kCGImagePropertyExifDateTimeOriginal];
+                    NSNumber *unixDateTime = [NSNumber numberWithDouble:[date timeIntervalSince1970]* 1000];
+                    [result setValue:unixDateTime forKey:(__bridge NSString *) kCGImagePropertyExifDateTimeOriginal];
                 }   
                 //http://www.exif.org/Exif2-2.PDF p:46 Exifの仕様に合わせて変換します
                 [result setValue:[latitude stringValue]  forKey:@"GPSLatitude"];
