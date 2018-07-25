@@ -244,24 +244,43 @@ RCT_EXPORT_METHOD(getDateTimeAndGPS:(NSString *)path
             @try{
                 NSDictionary *metaData = [self getMetaData:path];
                 NSDictionary *exif = [metaData objectForKey:(__bridge NSString * ) kCGImagePropertyExifDictionary];
-                NSDictionary *gps = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyGPSDictionary];
-                NSString *dateTimeOriginal = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeOriginal];
-                NSNumber *latitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitude];
-                NSString *latitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitudeRef];
-                NSNumber *longitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitude];
-                NSString *longitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitudeRef];
-                NSMutableDictionary *result = [NSMutableDictionary dictionary];
+                NSString *dateTime = nil;
+                if(exif){
+                    dateTime = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeOriginal];
+                } 
 
-                if(dateTimeOriginal){
+                //DateTimeOriginalが存在しない時更新日時をつかいます。
+                //更新日時を表すDateTimeはTIFFのメタ情報に準拠しているため、TIFFタグ中に存在しています
+                //http://www.cipa.jp/std/documents/j/DC-008-2012_J.pdf p:23~
+                NSDictionary *tiff = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyTIFFDictionary];
+                if(dateTime == nil && tiff){
+                    dateTime = [tiff objectForKey:(__bridge NSString *)kCGImagePropertyTIFFDateTime];
+                }
+
+                NSNumber *latitude = nil;
+                NSString *latitudeRef = nil;
+                NSNumber *longitude = nil;
+                NSString *longitudeRef = nil;
+                NSDictionary *gps = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyGPSDictionary];
+                if(gps){
+                    latitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitude];
+                    latitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitudeRef];
+                    longitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitude];
+                    longitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitudeRef];
+                }
+
+
+                NSMutableDictionary *result = [NSMutableDictionary dictionary];
+                if(dateTime){
                     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
 
                     // http://www.exif.org/Exif2-2.PDF p:30 
                     [formatter setDateFormat:@"yyyy:MM:dd HH:mm:ss"];
-                    NSDate *date = [formatter dateFromString:dateTimeOriginal];
+                    NSDate *date = [formatter dateFromString:dateTime];
                     　　　　　　　　
                     //Objective-cではUnixTimeの秒数以下を小数点以下であらわすため1000倍します
-                    NSNumber *unixDateTimeOriginal = [NSNumber numberWithDouble:[date timeIntervalSince1970]* 1000];
-                    [result setValue:unixDateTimeOriginal forKey:(__bridge NSString *) kCGImagePropertyExifDateTimeOriginal];
+                    NSNumber *unixDateTime = [NSNumber numberWithDouble:[date timeIntervalSince1970]* 1000];
+                    [result setValue:unixDateTime forKey:(__bridge NSString *) kCGImagePropertyExifDateTimeOriginal];
                 }   
                 //http://www.exif.org/Exif2-2.PDF p:46 Exifの仕様に合わせて変換します
                 [result setValue:[latitude stringValue]  forKey:@"GPSLatitude"];
@@ -957,3 +976,4 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
 }
 
 @end
+
