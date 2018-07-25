@@ -248,11 +248,19 @@ RCT_EXPORT_METHOD(getDateTimeAndGPS:(NSString *)path
                 if(exif){
                     dateTime = [exif objectForKey:(__bridge NSString *)kCGImagePropertyExifDateTimeOriginal];
                 } 
+
+                //DateTimeOriginalが存在しない時更新日時をつかいます。
+                //更新日時を表すDateTimeはTIFFのメタ情報に準拠しているため、TIFFタグ中に存在しています
+                //http://www.cipa.jp/std/documents/j/DC-008-2012_J.pdf p:23~
+                NSDictionary *tiff = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyTIFFDictionary];
+                if(dateTime == nil && tiff){
+                    dateTime = [tiff objectForKey:(__bridge NSString *)kCGImagePropertyTIFFDateTime];
+                }
+
                 NSNumber *latitude = nil;
                 NSString *latitudeRef = nil;
                 NSNumber *longitude = nil;
                 NSString *longitudeRef = nil;
-
                 NSDictionary *gps = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyGPSDictionary];
                 if(gps){
                     latitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLatitude];
@@ -260,16 +268,9 @@ RCT_EXPORT_METHOD(getDateTimeAndGPS:(NSString *)path
                     longitude = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitude];
                     longitudeRef = [gps objectForKey:(__bridge NSString *) kCGImagePropertyGPSLongitudeRef];
                 }
+
+
                 NSMutableDictionary *result = [NSMutableDictionary dictionary];
-
-                //DateTimeOriginalが存在しない時編集された時刻をつかいます。
-                //更新日時を表すDateTimeはメタ情報中のtiffグループに存在します
-                //https://developer.apple.com/documentation/imageio/cgimageproperties/tiff_dictionary_keys?language=objc
-                NSDictionary *tiff = [metaData objectForKey:(__bridge NSString *) kCGImagePropertyTIFFDictionary];
-                if(dateTime == nil && tiff){
-                    dateTime = [tiff objectForKey:(__bridge NSString *)kCGImagePropertyTIFFDateTime];
-                }
-
                 if(dateTime){
                     NSDateFormatter* formatter = [[NSDateFormatter alloc] init];
 
