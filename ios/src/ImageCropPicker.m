@@ -93,6 +93,7 @@ RCT_EXPORT_MODULE();
                                 @"mediaType": @"any",
                                 @"showsSelectedCount": @YES,
                                 @"forceJpg": @NO,
+                                @"sortOrder": @"none",
                                 @"cropperCancelText": @"Cancel",
                                 @"cropperChooseText": @"Choose"
                                 };
@@ -172,27 +173,28 @@ RCT_EXPORT_METHOD(openCamera:(NSDictionary *)options
             return;
         }
 
-        UIImagePickerController *picker = [[UIImagePickerController alloc] init];
-        picker.delegate = self;
-        picker.allowsEditing = NO;
-        picker.sourceType = UIImagePickerControllerSourceTypeCamera;
-
-        NSString *mediaType = [self.options objectForKey:@"mediaType"];
-        
-        if ([mediaType isEqualToString:@"video"]) {
-            NSArray *availableTypes = [UIImagePickerController availableMediaTypesForSourceType:UIImagePickerControllerSourceTypeCamera];
-
-            if ([availableTypes containsObject:(NSString *)kUTTypeMovie]) {
-                picker.mediaTypes = [[NSArray alloc] initWithObjects:(NSString *)kUTTypeMovie, nil];
-                picker.videoQuality = UIImagePickerControllerQualityTypeHigh;
-            }
-        }
-
-        if ([[self.options objectForKey:@"useFrontCamera"] boolValue]) {
-            picker.cameraDevice = UIImagePickerControllerCameraDeviceFront;
-        }
-
         dispatch_async(dispatch_get_main_queue(), ^{
+            
+            UIImagePickerController *picker = [[UIImagePickerController alloc] init];
+            picker.delegate = self;
+            picker.allowsEditing = NO;
+            picker.sourceType = UIImagePickerControllerSourceTypeCamera;
+
+            NSString *mediaType = [self.options objectForKey:@"mediaType"];
+            
+            if ([mediaType isEqualToString:@"video"]) {
+                NSArray *availableTypes = [UIImagePickerController availableMediaTypesForSourceType:UIImagePickerControllerSourceTypeCamera];
+
+                if ([availableTypes containsObject:(NSString *)kUTTypeMovie]) {
+                    picker.mediaTypes = [[NSArray alloc] initWithObjects:(NSString *)kUTTypeMovie, nil];
+                    picker.videoQuality = UIImagePickerControllerQualityTypeHigh;
+                }
+            }
+
+            if ([[self.options objectForKey:@"useFrontCamera"] boolValue]) {
+                picker.cameraDevice = UIImagePickerControllerCameraDeviceFront;
+            }
+            
             [[self getRootVC] presentViewController:picker animated:YES completion:nil];
         });
     }];
@@ -215,6 +217,7 @@ RCT_EXPORT_METHOD(openCamera:(NSDictionary *)options
              withFileName:fileName
       withLocalIdentifier:nil
                completion:^(NSDictionary* video) {
+                   dispatch_async(dispatch_get_main_queue(), ^{
                    if (video == nil) {
                        [picker dismissViewControllerAnimated:YES completion:[self waitAnimationEnd:^{
                            self.reject(ERROR_CANNOT_PROCESS_VIDEO_KEY, ERROR_CANNOT_PROCESS_VIDEO_MSG, nil);
@@ -225,6 +228,7 @@ RCT_EXPORT_METHOD(openCamera:(NSDictionary *)options
                    [picker dismissViewControllerAnimated:YES completion:[self waitAnimationEnd:^{
                        self.resolve(video);
                    }]];
+                   });
                }
          ];
     } else {
@@ -391,6 +395,7 @@ RCT_EXPORT_METHOD(openPicker:(NSDictionary *)options
             imagePickerController.minimumNumberOfSelection = abs([[self.options objectForKey:@"minFiles"] intValue]);
             imagePickerController.maximumNumberOfSelection = abs([[self.options objectForKey:@"maxFiles"] intValue]);
             imagePickerController.showsNumberOfSelectedAssets = [[self.options objectForKey:@"showsSelectedCount"] boolValue];
+            imagePickerController.sortOrder = [self.options objectForKey:@"sortOrder"];
             
             NSArray *smartAlbums = [self.options objectForKey:@"smartAlbums"];
             if (smartAlbums != nil) {
@@ -463,7 +468,7 @@ RCT_EXPORT_METHOD(openCropper:(NSDictionary *)options
 
     NSString *path = [options objectForKey:@"path"];
 
-    [self.bridge.imageLoader loadImageWithURLRequest:[RCTConvert NSURLRequest:path] callback:^(NSError *error, UIImage *image) {
+    [[self.bridge moduleForName:@"ImageLoader" lazilyLoadIfNecessary:YES] loadImageWithURLRequest:[RCTConvert NSURLRequest:path] callback:^(NSError *error, UIImage *image) {
         if (error) {
             self.reject(ERROR_CROPPER_IMAGE_NOT_FOUND_KEY, ERROR_CROPPER_IMAGE_NOT_FOUND_MSG, nil);
         } else {
